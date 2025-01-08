@@ -6,6 +6,9 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+#安装sudo
+apt install sudo
+ 
 # Caddy 配置文件路径
 CADDY_CONFIG="/etc/caddy/Caddyfile"
 
