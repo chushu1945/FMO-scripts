@@ -55,7 +55,7 @@ install_caddy() {
   fi
 
   # 创建配置文件（如果不存在）
-  if [ ! -f "$CADDY_CONFIG" ]; then  
+  if [ ! -f "$CADDY_CONFIG" ]; then
     echo "配置文件不存在，正在创建 $CADDY_CONFIG..."
     touch "$CADDY_CONFIG"
   fi
@@ -66,9 +66,8 @@ main_menu() {
   echo "请选择操作："
   echo "1) 添加完整配置（域名 + 重定向 + 反向代理）"
   echo "2) 添加端口代理配置（带域名）"
-  echo "3) 删除现有配置"
   echo "q) 退出"
-  read -p "请输入数字选择 (1, 2, 3) 或输入 'q' 退出: " CHOICE
+  read -p "请输入数字选择 (1, 2) 或输入 'q' 退出: " CHOICE
 
   case "$CHOICE" in
     1)
@@ -76,9 +75,6 @@ main_menu() {
       ;;
     2)
       port_with_domain
-      ;;
-    3)
-      delete_config
       ;;
     q)
       echo "退出脚本。"
@@ -93,40 +89,69 @@ main_menu() {
 
 # 添加完整配置函数
 full_config() {
-  # ... (保持原有的逻辑不变)
-}
+  read -p "请输入域名 (如 xxx.xxx.xyz): " DOMAIN
+  read -p "请输入根路径重定向的子路径 (如 /xxx/): " SUBPATH
+  read -p "请输入本地服务端口 (如 8080): " LOCAL_PORT
 
-# 添加端口代理配置（带域名）函数
-port_with_domain() {
-  # ... (保持原有的逻辑不变)
-}
-
-# 删除现有配置函数
-delete_config() {
-  # 显示当前配置中的域名列表
-  echo "当前配置中的域名列表："
-  grep -n "^[^#].*{" "$CADDY_CONFIG" | sed 's/:.*//'
-  
-  read -p "请输入要删除的配置行号 (输入 'q' 返回主菜单): " LINE_NUMBER
-
-  if [[ "$LINE_NUMBER" == "q" ]]; then
+  if [ -z "$DOMAIN" ] || [ -z "$SUBPATH" ] || [ -z "$LOCAL_PORT" ]; then
+    echo "域名、重定向路径或端口不能为空！" >&2
     main_menu
     return
   fi
 
-  if ! [[ "$LINE_NUMBER" =~ ^[0-9]+$ ]]; then
-    echo "无效的行号，请输入数字。"
-    delete_config
+  # 检查是否已有相同域名配置
+  if grep -q "^$DOMAIN {" "$CADDY_CONFIG"; then
+    echo "域名 $DOMAIN 已存在于配置中，跳过添加！" >&2
+    main_menu
     return
   fi
 
-  # 获取要删除的域名
-  DOMAIN_TO_DELETE=$(sed -n "${LINE_NUMBER}p" "$CADDY_CONFIG" | awk '{print $1}')
+  # 添加完整配置
+  echo "正在添加完整配置到 $CADDY_CONFIG..."
+  cat >> "$CADDY_CONFIG" <<EOF
 
-  # 删除选中的配置块
-  sed -i "${LINE_NUMBER}{:a;N;/^}/!ba};/^${DOMAIN_TO_DELETE}/d" "$CADDY_CONFIG"
+$DOMAIN {
+    # 根路径重定向到 $SUBPATH
+    redir / $SUBPATH 301
 
-  echo "已删除 ${DOMAIN_TO_DELETE} 的配置。"
+    # 反向代理所有请求到本地 $LOCAL_PORT 端口
+    reverse_proxy localhost:$LOCAL_PORT
+}
+EOF
+
+  echo "完整配置已添加！"
+  reload_caddy
+}
+
+# 添加端口代理配置（带域名）函数
+port_with_domain() {
+  read -p "请输入域名 (如 xxx.xxx.xyz): " DOMAIN
+  read -p "请输入本地服务端口 (如 8080): " LOCAL_PORT
+
+  if [ -z "$DOMAIN" ] || [ -z "$LOCAL_PORT" ]; then
+    echo "域名或端口不能为空！" >&2
+    main_menu
+    return
+  fi
+
+  # 检查是否已有相同域名配置
+  if grep -q "^$DOMAIN {" "$CADDY_CONFIG"; then
+    echo "域名 $DOMAIN 已存在于配置中，跳过添加！" >&2
+    main_menu
+    return
+  fi
+
+  # 添加端口代理配置
+  echo "正在添加端口代理配置到 $CADDY_CONFIG..."
+  cat >> "$CADDY_CONFIG" <<EOF
+
+$DOMAIN {
+    # 反向代理所有请求到本地 $LOCAL_PORT 端口
+    reverse_proxy localhost:$LOCAL_PORT
+}
+EOF
+
+  echo "端口代理配置已添加！"
   reload_caddy
 }
 
