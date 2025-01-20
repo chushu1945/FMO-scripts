@@ -30,7 +30,35 @@ check_caddy_installed() {
 
 # 安装 Caddy 函数
 install_caddy() {
-  # ... (保持原有的安装逻辑不变)
+  echo "开始安装 Caddy..."
+  
+  # 更新系统并安装依赖
+  sudo apt update
+  sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+
+  # 添加 Caddy 的 GPG 密钥
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+  # 添加 Caddy 的软件源
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null
+
+  # 更新软件包索引并安装 Caddy
+  sudo apt update
+  sudo apt install -y caddy
+
+  # 检查是否安装成功
+  if command -v caddy >/dev/null 2>&1; then
+    echo "Caddy 安装成功！🎉"
+  else
+    echo "Caddy 安装失败，请检查日志。" >&2
+    exit 1
+  fi
+
+  # 创建配置文件（如果不存在）
+  if [ ! -f "$CADDY_CONFIG" ]; then  
+    echo "配置文件不存在，正在创建 $CADDY_CONFIG..."
+    touch "$CADDY_CONFIG"
+  fi
 }
 
 # 主菜单函数
