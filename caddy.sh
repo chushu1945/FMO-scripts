@@ -34,7 +34,7 @@ install_caddy() {
   
   # 更新系统并安装依赖
   sudo apt update
-  sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+  sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https  
 
   # 添加 Caddy 的 GPG 密钥
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -66,8 +66,9 @@ main_menu() {
   echo "请选择操作："
   echo "1) 添加完整配置（域名 + 重定向 + 反向代理）"
   echo "2) 添加端口代理配置（带域名）"
+  echo "3) 删除配置"
   echo "q) 退出"
-  read -p "请输入数字选择 (1, 2) 或输入 'q' 退出: " CHOICE
+  read -p "请输入数字选择 (1, 2, 3) 或输入 'q' 退出: " CHOICE
 
   case "$CHOICE" in
     1)
@@ -75,6 +76,9 @@ main_menu() {
       ;;
     2)
       port_with_domain
+      ;;
+    3)
+      delete_config
       ;;
     q)
       echo "退出脚本。"
@@ -155,11 +159,43 @@ EOF
   reload_caddy
 }
 
+# 删除配置函数
+delete_config() {
+  echo "当前配置："
+  grep -E "^\S+ \{$" "$CADDY_CONFIG" | sed 's/ {$//' | nl
+
+  read -p "请输入要删除的配置编号 (或输入 'q' 返回主菜单): " DELETE_CHOICE
+
+  if [ "$DELETE_CHOICE" == "q" ]; then
+    main_menu
+    return
+  fi
+
+  if ! [[ "$DELETE_CHOICE" =~ ^[0-9]+$ ]]; then
+    echo "无效选择，请输入数字或 'q'。"
+    delete_config
+    return
+  fi
+
+  DOMAIN_TO_DELETE=$(grep -E "^\S+ \{$" "$CADDY_CONFIG" | sed 's/ {$//' | sed -n "${DELETE_CHOICE}p")
+
+  if [ -z "$DOMAIN_TO_DELETE" ]; then
+    echo "无效编号，请重新选择。"
+    delete_config
+    return
+  fi
+
+  echo "正在删除配置：$DOMAIN_TO_DELETE"
+  sed -i "/^$DOMAIN_TO_DELETE {/,/^}/d" "$CADDY_CONFIG"
+  echo "配置已删除！"
+  reload_caddy
+}
+
 # 重启 Caddy 服务函数
 reload_caddy() {
-  # 显示配置文件内容
-  echo "新的 Caddy 配置文件内容："
-  cat "$CADDY_CONFIG"
+  # 显示配置文件中实际的域名列表
+  echo "当前 Caddy 配置域名列表："
+  grep -E "^\S+ \{$" "$CADDY_CONFIG" | sed 's/ {$//' | nl
 
   # 重启 Caddy 服务以应用新配置
   echo "正在重启 Caddy 服务..."
@@ -175,6 +211,7 @@ reload_caddy() {
   # 返回主菜单
   main_menu
 }
+
 
 # 检查并处理 Caddy 是否安装
 check_caddy_installed
