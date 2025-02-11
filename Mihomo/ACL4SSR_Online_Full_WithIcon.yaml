@@ -9,7 +9,6 @@ proxy-groups:
       - 狮城节点
       - 日本节点
       - 美国节点
-      - 韩国节点
       - 手动切换
       - DIRECT
   - name: 手动切换
@@ -33,7 +32,6 @@ proxy-groups:
       - 台湾节点
       - 日本节点
       - 美国节点
-      - 韩国节点
       - 手动切换
       - DIRECT
   - name: OpenAi
@@ -47,7 +45,6 @@ proxy-groups:
       - 台湾节点
       - 日本节点
       - 美国节点
-      - 韩国节点
       - 手动切换
       - DIRECT
   - name: 巴哈姆特
@@ -89,7 +86,6 @@ proxy-groups:
       - 狮城节点
       - 日本节点
       - 美国节点
-      - 韩国节点
       - 手动切换
   - name: 香港节点
     icon: 
@@ -123,13 +119,6 @@ proxy-groups:
     icon: 
     include-all: true
     filter: (?i)新加坡|坡|狮城|SG|Singapore
-    type: url-test
-    interval: 300
-    tolerance: 50
-  - name: 韩国节点
-    icon: 
-    include-all: true
-    filter: (?i)KR|Korea|KOR|首尔|韩|韓
     type: url-test
     interval: 300
     tolerance: 50
