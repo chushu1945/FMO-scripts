@@ -14,6 +14,9 @@ fi
 # 设置服务器名字
 hostnamectl set-hostname "$HOSTNAME"
 
+# 输出设置结果
+echo "服务器名字已设置为: $HOSTNAME"
+
 # 生成一个随机数
 RANDOM_NUMBER=$((RANDOM % 254 + 1))  # 生成 1 到 254 之间的随机数
 # 检查 /etc/hosts 文件中是否已存在 127.0.1.0 的解析
