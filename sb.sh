@@ -137,6 +137,21 @@ install_sing_box() {
         exit 1
     fi
 
+    # 新增：将 sing-box 复制到 /usr/local/bin 目录
+    print_color $BLUE "正在将 Sing-box 复制到 /usr/local/bin 目录..."
+    if ! cp "$BIN_DIR/sing-box" "/usr/local/bin/sing-box"; then
+        print_color $RED "复制到 /usr/local/bin 失败。"
+        rm -rf "$temp_dir"
+        exit 1
+    fi
+    chmod +x "/usr/local/bin/sing-box"
+    if [[ -x "/usr/local/bin/sing-box" ]]; then
+        print_color $GREEN "Sing-box 已成功复制到 /usr/local/bin，可以使用 'sing-box' 命令。"
+    else
+        print_color $RED "Sing-box 复制到 /usr/local/bin 后无法执行。"
+        exit 1
+    fi
+
     rm -rf "$temp_dir"
     print_color $GREEN "清理临时文件完成"
 }
